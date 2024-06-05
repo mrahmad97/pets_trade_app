@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "285984965597",
+    "project_id": "p-trade-525c6",
+    "storage_bucket": "p-trade-525c6.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:285984965597:android:e60ea79829491c3533ac34",
+        "android_client_info": {
+          "package_name": "com.example.p_trade"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCUoeVkFeisJKiS_AEWaVtLCJPz13It8ec"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
