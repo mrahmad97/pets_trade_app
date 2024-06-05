@@ -18,6 +18,9 @@ class _StartPageState extends State<StartPage> {
   }
 
   Future<void> navigateToNextPage(BuildContext context) async {
+
+    await Future.delayed(Duration(seconds: 5));
+
     SharedPreferences prefs = await SharedPreferences.getInstance();
     bool isFirstLaunch = prefs.getBool('isFirstLaunch') ?? true;
 
