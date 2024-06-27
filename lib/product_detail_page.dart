@@ -127,8 +127,31 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                   child: MyElevatedButton(
                     label: 'Buy Now',
                     onPressed: () {
-                      context.read<CartProvider>().addPet(widget.breed);
-                      Navigator.of(context).pop();
+                      bool alreadyExists = context
+                          .read<CartProvider>()
+                          .cartList
+                          .any((item) => item['id'] == widget.breed['id']);
+
+                      if (!alreadyExists) {
+                        context.read<CartProvider>().addPet(widget.breed);
+                        Navigator.of(context).pop();
+                      } else {
+                        // Show a message or handle the case where breed is already in the cart
+                        showDialog(
+                          context: context,
+                          builder: (BuildContext context) => AlertDialog(
+                            title: Text('Already in Cart'),
+                            content:
+                                Text('This breed is already in your cart.'),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.pop(context),
+                                child: Text('OK'),
+                              ),
+                            ],
+                          ),
+                        );
+                      }
                     },
                   ),
                 ),

@@ -18,65 +18,23 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  bool isSearching = false;
-  String _searchText = '';
-  final List<Map<String, dynamic>> _searchedData = [];
-
-  void startSearch() {
-    setState(() {
-      isSearching = true;
-    });
-  }
-
-  void stopSearch() {
-    setState(() {
-      isSearching = false;
-      _searchText = '';
-      _searchedData.clear();
-    });
-  }
-
-  Future<void> _search(String searchText) async {
-    if (searchText.isNotEmpty) {
-      final String searchKey = searchText.toLowerCase();
-      final QuerySnapshot result = await FirebaseFirestore.instance
-          .collection('breeds')
-          .where('breed', isGreaterThanOrEqualTo: searchKey)
-          .where('breed', isLessThanOrEqualTo: searchKey + '\uf8ff')
-          .get();
-
-      setState(() {
-        _searchedData.clear();
-        for (var doc in result.docs) {
-          _searchedData.add(doc.data() as Map<String, dynamic>);
-        }
-      });
-    } else {
-      setState(() {
-        _searchedData.clear();
-      });
-    }
-  }
-
-
-  void _navigateToProductDetailPage(
-      BuildContext context, Map<String, dynamic> breed) async {
-    final result = await Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) => ProductDetailPage(breed: breed),
-      ),
-    );
-    if (result == 'back') {
-      stopSearch();
-      Navigator.popUntil(
-          context, ModalRoute.withName(Navigator.defaultRouteName));
-    }
-  }
-
   final ScrollController _scrollController = ScrollController();
+
+  late List<Map<String, dynamic>> allBreeds;
+  List<Map<String, dynamic>> filteredBreeds = [];
+  bool isSearching = false;
+  late TextEditingController searchController;
+
+  @override
+  void initState() {
+    super.initState();
+    searchController = TextEditingController();
+    _fetchBreeds();
+  }
 
   @override
   void dispose() {
+    searchController.dispose();
     _scrollController.dispose();
     super.dispose();
   }
@@ -92,6 +50,14 @@ class _HomePageState extends State<HomePage> {
 
   final FirebaseFirestore db = FirebaseFirestore.instance;
 
+  void _fetchBreeds() async {
+    final snapshot = await db.collection('breeds').get();
+    setState(() {
+      allBreeds = snapshot.docs
+          .map((doc) => doc.data() as Map<String, dynamic>)
+          .toList();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -100,17 +66,21 @@ class _HomePageState extends State<HomePage> {
       appBar: AppBar(
         title: isSearching
             ? TextField(
+                controller: searchController,
+                decoration: InputDecoration(
+                  hintText: 'Search breeds...',
+                  hintStyle: TextStyle(color: Colors.black),
+                ),
+                style: TextStyle(color: Colors.black),
                 onChanged: (value) {
                   setState(() {
-                    _searchText = value;
+                    if (value.isEmpty) {
+                      filteredBreeds.clear();
+                    } else {
+                      filteredBreeds = filteredSearchResults(value);
+                    }
                   });
-                  _search(value);
                 },
-                keyboardType: TextInputType.text,
-                decoration: InputDecoration(
-                  hintText: 'Search',
-                  border: InputBorder.none,
-                ),
               )
             : Center(
                 child: Text(
@@ -128,13 +98,15 @@ class _HomePageState extends State<HomePage> {
         actions: [
           IconButton(
             onPressed: () {
-              if (isSearching) {
-                stopSearch();
-              } else {
-                startSearch();
-              }
+              setState(() {
+                isSearching = !isSearching;
+                if (!isSearching) {
+                  searchController.clear();
+                  filteredBreeds.clear();
+                }
+              });
             },
-            icon: Icon(isSearching ? Icons.clear : Icons.search),
+            icon: Icon(isSearching ? Icons.close : Icons.search),
           ),
           IconButton(
             onPressed: () {
@@ -261,214 +233,212 @@ class _HomePageState extends State<HomePage> {
           ),
         ),
       ),
-      body: isSearching
-          ? GestureDetector(
-              onTap: () {
-                FocusScope.of(context).unfocus();
-              },
-              child: ListView.builder(
-                itemCount: _searchedData.length,
-                itemBuilder: (context, index) {
-                  final breed = _searchedData[index];
-                  return GestureDetector(
-                    onTap: () {
-                      _navigateToProductDetailPage(context, breed);
-                    },
-                    child: buildCard(breed),
-                  );
-                },
-              ),
-            )
-          : SingleChildScrollView(
-              child: Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Container(
-                      padding: EdgeInsets.all(8),
-                      width: double.infinity,
-                      height: 220,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(20),
-                        color: Theme.of(context).colorScheme.primaryContainer,
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: EdgeInsets.all(8.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              isSearching
+                  ? Center(
+                      child: Text(
+                        'Search Results',
+                        style: TextStyle(
+                            fontSize: 20, fontWeight: FontWeight.bold),
                       ),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: Image.asset(
-                              "assets/images/ad_img/man and dog.png",
-                              width: 200,
-                            ),
+                    )
+                  : Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Container(
+                          padding: EdgeInsets.all(8),
+                          width: double.infinity,
+                          height: 220,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(20),
+                            color:
+                                Theme.of(context).colorScheme.primaryContainer,
                           ),
-                          Column(
+                          child: Row(
                             children: [
-                              SizedBox(
-                                height: 50,
-                              ),
-                              Text(
-                                "Pick up The Right Pet!",
-                                style: TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.black87),
-                              ),
-                              SizedBox(
-                                height: 10,
-                              ),
-                              Text(
-                                'Before buying the\n'
-                                'pet, make sure that it\n'
-                                'is the right one for\n'
-                                'you!',
-                                style: TextStyle(fontSize: 18),
-                              )
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                    SizedBox(
-                      height: 5,
-                    ),
-                    Text(
-                      'Categories',
-                      style:
-                          TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                    ),
-                    SizedBox(
-                      height: 100,
-                      child: ListView.builder(
-                        itemCount: category.length,
-                        scrollDirection: Axis.horizontal,
-                        itemBuilder: (context, index) {
-                          return GestureDetector(
-                            onTap: () {
-                              Navigator.of(context).push(
-                                MaterialPageRoute(
-                                  builder: (context) => ProductListPage(
-                                      category: category[index]),
+                              Expanded(
+                                child: Image.asset(
+                                  "assets/images/ad_img/man and dog.png",
+                                  width: 200,
                                 ),
-                              );
-                            },
-                            child: Container(
-                              width: 95,
-                              height: 95,
-                              margin: EdgeInsets.fromLTRB(0, 0, 12, 0),
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(12),
-                                color: Theme.of(context)
-                                    .colorScheme
-                                    .primaryContainer,
                               ),
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                crossAxisAlignment: CrossAxisAlignment.center,
+                              Column(
                                 children: [
-                                  Image.asset(
-                                    categoryIcon[index],
-                                    width: 35,
-                                    height: 35,
+                                  SizedBox(
+                                    height: 50,
+                                  ),
+                                  Text(
+                                    "Pick up The Right Pet!",
+                                    style: TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.black87),
                                   ),
                                   SizedBox(
                                     height: 10,
                                   ),
                                   Text(
-                                    category[index],
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
+                                    'Before buying the\n'
+                                    'pet, make sure that it\n'
+                                    'is the right one for\n'
+                                    'you!',
+                                    style: TextStyle(fontSize: 18),
+                                  )
                                 ],
                               ),
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-                    SizedBox(
-                      height: 10,
-                    ),
-                    Text(
-                      'Take a Look',
-                      style:
-                          TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                    ),
-                    StreamBuilder<QuerySnapshot>(
-                        stream: db.collection('breeds').snapshots(),
-                        builder: (context, snapshot) {
-                          if (snapshot.connectionState ==
-                              ConnectionState.waiting) {
-                            return Center(child: CircularProgressIndicator());
-                          } else if (snapshot.hasError) {
-                            return Center(
-                                child: Text(
-                                    'An error occurred: ${snapshot.error}'));
-                          } else if (!snapshot.hasData ||
-                              snapshot.data!.docs.isEmpty) {
-                            return Center(child: Text('No breeds found.'));
-                          } else {
-                            var breeds = snapshot.data!.docs;
-                            return ListView.builder(
-                              controller: _scrollController,
-                              itemCount: (breeds.length / 2).ceil(),
-                              shrinkWrap: true,
-                              itemBuilder: (context, index) {
-                                int firstIndex = index * 2;
-                                int secondIndex = firstIndex + 1;
-                                var firstBreed = breeds[firstIndex].data()
-                                    as Map<String, dynamic>;
-                                var secondBreed = secondIndex < breeds.length
-                                    ? breeds[secondIndex].data()
-                                        as Map<String, dynamic>
-                                    : null;
-
-                                return Row(
-                                  children: [
-                                    Expanded(
-                                      child: GestureDetector(
-                                        onTap: () {
-                                          Navigator.of(context).push(
-                                            MaterialPageRoute(
-                                              builder: (context) =>
-                                                  ProductDetailPage(
-                                                      breed: firstBreed),
-                                            ),
-                                          );
-                                        },
-                                        child: buildCard(firstBreed),
+                            ],
+                          ),
+                        ),
+                        SizedBox(
+                          height: 5,
+                        ),
+                        Text(
+                          'Categories',
+                          style: TextStyle(
+                              fontSize: 20, fontWeight: FontWeight.bold),
+                        ),
+                        SizedBox(
+                          height: 100,
+                          child: ListView.builder(
+                            itemCount: category.length,
+                            scrollDirection: Axis.horizontal,
+                            itemBuilder: (context, index) {
+                              return GestureDetector(
+                                onTap: () {
+                                  Navigator.of(context).push(
+                                    MaterialPageRoute(
+                                      builder: (context) => ProductListPage(
+                                        category: category[index],
                                       ),
                                     ),
-                                    SizedBox(width: 8),
-                                    // Add some space between cards
-                                    secondBreed != null
-                                        ? Expanded(
-                                            child: GestureDetector(
-                                              onTap: () {
-                                                Navigator.of(context).push(
-                                                  MaterialPageRoute(
-                                                    builder: (context) =>
-                                                        ProductDetailPage(
-                                                            breed: secondBreed),
-                                                  ),
-                                                );
-                                              },
-                                              child: buildCard(secondBreed),
-                                            ),
-                                          )
-                                        : SizedBox(),
-                                  ],
-                                );
-                              },
-                            );
-                          }
-                        }),
-                  ],
-                ),
+                                  );
+                                },
+                                child: Container(
+                                  width: 95,
+                                  height: 95,
+                                  margin: EdgeInsets.fromLTRB(0, 0, 12, 0),
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(12),
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .primaryContainer,
+                                  ),
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.center,
+                                    children: [
+                                      Image.asset(
+                                        categoryIcon[index],
+                                        width: 35,
+                                        height: 35,
+                                      ),
+                                      SizedBox(
+                                        height: 10,
+                                      ),
+                                      Text(
+                                        category[index],
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                        SizedBox(
+                          height: 10,
+                        ),
+                        Text(
+                          'Take a Look',
+                          style: TextStyle(
+                              fontSize: 20, fontWeight: FontWeight.bold),
+                        ),
+                      ],
+                    ),
+              StreamBuilder<QuerySnapshot>(
+                stream: db.collection('breeds').snapshots(),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return Center(child: CircularProgressIndicator());
+                  } else if (snapshot.hasError) {
+                    return Center(
+                        child: Text('An error occurred: ${snapshot.error}'));
+                  } else if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                    return Center(child: Text('No breeds found.'));
+                  } else {
+                    var breeds = snapshot.data!.docs
+                        .map((doc) => doc.data() as Map<String, dynamic>)
+                        .toList();
+                    if (isSearching) {
+                      breeds = filteredBreeds;
+                    }
+                    return ListView.builder(
+                      controller: _scrollController,
+                      itemCount: (breeds.length / 2).ceil(),
+                      shrinkWrap: true,
+                      itemBuilder: (context, index) {
+                        int firstIndex = index * 2;
+                        int secondIndex = firstIndex + 1;
+                        var firstBreed = breeds[firstIndex];
+                        var secondBreed = secondIndex < breeds.length
+                            ? breeds[secondIndex]
+                            : null;
+
+                        return Row(
+                          children: [
+                            Expanded(
+                              child: GestureDetector(
+                                onTap: () {
+                                  Navigator.of(context).push(
+                                    MaterialPageRoute(
+                                      builder: (context) =>
+                                          ProductDetailPage(breed: firstBreed),
+                                    ),
+                                  );
+                                },
+                                child: buildCard(firstBreed),
+                              ),
+                            ),
+                            SizedBox(width: 8),
+                            // Add some space between cards
+                            secondBreed != null
+                                ? Expanded(
+                                    child: GestureDetector(
+                                      onTap: () {
+                                        Navigator.of(context).push(
+                                          MaterialPageRoute(
+                                            builder: (context) =>
+                                                ProductDetailPage(
+                                                    breed: secondBreed),
+                                          ),
+                                        );
+                                      },
+                                      child: buildCard(secondBreed),
+                                    ),
+                                  )
+                                : SizedBox(),
+                          ],
+                        );
+                      },
+                    );
+                  }
+                },
               ),
-            ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
@@ -511,9 +481,10 @@ class _HomePageState extends State<HomePage> {
             ),
             Container(
               decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.primaryContainer,
-                  borderRadius:
-                      BorderRadius.vertical(bottom: Radius.circular(12))),
+                color: Theme.of(context).colorScheme.primaryContainer,
+                borderRadius:
+                    BorderRadius.vertical(bottom: Radius.circular(12)),
+              ),
               width: double.infinity,
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -540,5 +511,18 @@ class _HomePageState extends State<HomePage> {
         ),
       ),
     );
+  }
+
+  List<Map<String, dynamic>> filteredSearchResults(String query) {
+    List<Map<String, dynamic>> searchResults = [];
+    if (allBreeds.isNotEmpty) {
+      searchResults = allBreeds.where((breed) {
+        String breedName = breed['breed'].toString().toLowerCase();
+        String category = breed['category'].toString().toLowerCase();
+        return breedName.contains(query.toLowerCase()) ||
+            category.contains(query.toLowerCase());
+      }).toList();
+    }
+    return searchResults;
   }
 }

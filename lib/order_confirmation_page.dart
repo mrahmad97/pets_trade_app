@@ -65,7 +65,6 @@ class _OrderConfirmationPageState extends State<OrderConfirmationPage> {
                   height: 30,
                 ),
                 MyElevatedButton(label: 'Go To Home Page', onPressed: () {
-                  context.read<CartProvider>().clearCart();
                   Navigator.of(context).pushAndRemoveUntil(
                       MaterialPageRoute(builder: (context) => HomePage(),), (
                       route) => false);

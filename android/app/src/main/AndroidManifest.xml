@@ -4,7 +4,7 @@
 
 
     <application
-        android:label="p_trade"
+        android:label="P Trade"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity
