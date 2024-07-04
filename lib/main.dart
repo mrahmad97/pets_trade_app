@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:p_trade/cart_provider.dart';
-import 'package:p_trade/favorite_provider.dart';
-import 'package:p_trade/start_page.dart';
-import 'package:p_trade/theme_model.dart';
+import 'package:p_trade/providers/cart_provider.dart';
+import 'package:p_trade/providers/favorite_provider.dart';
+import 'package:p_trade/pages/start_page.dart';
+import 'package:p_trade/widgets/theme_model.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:p_trade/user_provider.dart';
+import 'package:p_trade/providers/user_provider.dart';
 import 'firebase_options.dart';
 import 'package:provider/provider.dart';
 
@@ -32,7 +32,7 @@ class MyApp extends StatelessWidget {
             useMaterial3: true,
             colorScheme: ColorScheme.fromSeed(
                 seedColor: Color(0xFF2E8B57),
-                background: Colors.white,
+                surface: Colors.white,
                 primary: Color(0xFF2E8B57),
                 primaryContainer: Color(0xFFC6EED8)),
           )),

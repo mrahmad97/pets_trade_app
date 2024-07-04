@@ -43,6 +43,9 @@
 	</array>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
+	<key>NSLocationWhenInUseUsageDescription</key>
+    <string>We need your location to provide better service</string>
+
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
 </dict>
