@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
-import 'package:p_trade/pages/product_detail_page.dart';
-import 'package:provider/provider.dart';
-import 'package:p_trade/providers/cart_provider.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:p_trade/pages/checkout_page.dart';
 import 'package:p_trade/pages/login_page.dart';
-import 'package:p_trade/widgets/my_elevated_button.dart';
+import 'package:p_trade/pages/product_detail_page.dart';
+import 'package:p_trade/providers/cart_provider.dart';
 import 'package:p_trade/providers/user_provider.dart';
+import 'package:p_trade/widgets/my_elevated_button.dart';
+import 'package:provider/provider.dart';
+import 'package:shimmer/shimmer.dart';
 
 class CartPage extends StatefulWidget {
   const CartPage({super.key});
@@ -208,6 +209,20 @@ class _CartPageState extends State<CartPage> {
                                   product['imageURL'][0],
                                   width: 70,
                                   height: 70,
+                                  errorBuilder: (context, error, stackTrace) {
+                                    return Shimmer.fromColors(
+                                      child: Container(
+                                        width: 70,
+                                        height: 70,
+                                        decoration: BoxDecoration(
+                                            color: Colors.white,
+                                            borderRadius:
+                                                BorderRadius.circular(8)),
+                                      ),
+                                      baseColor: Colors.grey[300]!,
+                                      highlightColor: Colors.grey[100]!,
+                                    );
+                                  },
                                 ),
                                 title: Text(product['breed']),
                                 subtitle: Text(
@@ -278,91 +293,53 @@ class _CartPageState extends State<CartPage> {
                           ),
                         ),
                         SizedBox(height: 10),
-                        isLoading
-                            ? CircularProgressIndicator.adaptive()
-                            : MyElevatedButton(
-                                label: 'Proceed To Checkout',
-                                onPressed: () async {
-                                  // Perform async operation to determine position
-                                  await _determinePosition();
-                                  setState(() {
-                                    isLoading = true;
-                                  });
+                        MyElevatedButton(
+                          label:
+                              isLoading ? 'Loading...' : 'Proceed To Checkout',
+                          onPressed: () async {
+                            setState(() {
+                              isLoading =
+                                  true; // Set isLoading to true when starting async operations
+                            });
 
-                                  // Check if the widget is still mounted before proceeding
-                                  if (!mounted) {
-                                    return; // Exit early if the widget is not mounted
-                                  }
+                            // Perform async operation to determine position
+                            await _determinePosition();
 
-                                  // Check if user is logged in
-                                  if (user == null) {
-                                    // Navigate to LoginPage
-                                    await Navigator.of(context).push(
-                                      MaterialPageRoute(
-                                        builder: (context) => LoginPage(),
-                                      ),
-                                    );
 
-                                    // After navigation, check if the widget is still mounted
-                                    if (!mounted) {
-                                      return; // Exit early if the widget is not mounted
-                                    }
+                            if (user == null) {
+                              // Navigate to LoginPage
+                              await Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (context) => LoginPage(),
+                                ),
+                              );
 
-                                    // Check if user is logged in after navigation
-                                    if (context.read<UserProvider>().user !=
-                                        null) {
-                                      // User is logged in, navigate to CheckoutPage if location is fetched
-                                      if (isLocationFetched) {
-                                        Navigator.of(context).push(
-                                          MaterialPageRoute(
-                                            builder: (context) => CheckoutPage(
-                                              cartItems: cartProvider.cartList,
-                                              selectedCity: selectedCity,
-                                              currentAddress: currentAddress,
-                                            ),
-                                          ),
-                                        );
-                                      } else {
-                                        // Location not fetched, show a Snackbar
-                                        ScaffoldMessenger.of(context)
-                                            .showSnackBar(
-                                          SnackBar(
-                                            content: Text(
-                                              'Could not fetch location. Please try again.',
-                                            ),
-                                          ),
-                                        );
-                                      }
-                                    }
-                                  } else {
-                                    // User is already logged in, navigate directly to CheckoutPage if location is fetched
-                                    if (isLocationFetched) {
-                                      setState(() {
-                                        isLoading = false;
-                                      });
-                                      Navigator.of(context).push(
-                                        MaterialPageRoute(
-                                          builder: (context) => CheckoutPage(
-                                            cartItems: cartProvider.cartList,
-                                            selectedCity: selectedCity,
-                                            currentAddress: currentAddress,
-                                          ),
-                                        ),
-                                      );
-                                    } else {
-                                      // Location not fetched, show a Snackbar
-                                      ScaffoldMessenger.of(context)
-                                          .showSnackBar(
-                                        SnackBar(
-                                          content: Text(
-                                            'Could not fetch location. Please try again.',
-                                          ),
-                                        ),
-                                      );
-                                    }
-                                  }
-                                },
-                              ),
+                              // Check if the widget is still mounted before proceeding
+                              if (!mounted) {
+                                return; // Exit early if the widget is not mounted
+                              }
+                            }
+
+                            // Check if user is logged in after navigation
+                            if (context.read<UserProvider>().user != null) {
+                              // User is logged in, navigate to CheckoutPage if location is fetched
+                              Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (context) => CheckoutPage(
+                                    cartItems: cartProvider.cartList,
+                                    selectedCity: selectedCity,
+                                    currentAddress: currentAddress,
+                                  ),
+                                ),
+                              );
+                            }
+
+                            // After completing async operations, set isLoading back to false
+                            setState(() {
+                              isLoading = false;
+                            });
+                          },
+                        ),
                       ],
                     ),
                   ),

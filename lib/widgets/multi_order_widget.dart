@@ -5,7 +5,7 @@ class MultiItemOrderCard extends StatefulWidget {
   final Map<String, dynamic> orderData;
   final List<dynamic> items;
 
-  const MultiItemOrderCard({
+  const MultiItemOrderCard({super.key,
     required this.orderData,
     required this.items,
   });
@@ -23,7 +23,7 @@ class _MultiItemOrderCardState extends State<MultiItemOrderCard> {
     String createdTime = widget.orderData['created_time'] ?? 'Unknown Time';
 
     return Card(
-      color: Theme.of(context).colorScheme.background,
+      color: Theme.of(context).colorScheme.surface,
       elevation: 4,
       child: ExpansionTile(
         onExpansionChanged: (bool expanded) {

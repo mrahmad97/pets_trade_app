@@ -2,11 +2,12 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:p_trade/data/cities_data.dart';
+import 'package:p_trade/pages/order_confirmation_page.dart';
 import 'package:p_trade/providers/cart_provider.dart';
 import 'package:p_trade/widgets/my_elevated_button.dart';
-import 'package:p_trade/pages/order_confirmation_page.dart';
 import 'package:provider/provider.dart';
-import 'package:p_trade/data/cities_data.dart'; // Ensure cities_data.dart is imported correctly
+import 'package:shared_preferences/shared_preferences.dart';
 
 class CheckoutPage extends StatefulWidget {
   final List<Map<String, dynamic>> cartItems;
@@ -27,10 +28,12 @@ class CheckoutPage extends StatefulWidget {
 class _CheckoutPageState extends State<CheckoutPage> {
   final GlobalKey<FormState> formKey = GlobalKey<FormState>();
   TextEditingController emailController = TextEditingController();
-  TextEditingController mobileController = TextEditingController();
+  TextEditingController phoneController = TextEditingController();
   TextEditingController nameController = TextEditingController();
   late TextEditingController _addressController;
   late TextEditingController _cityController;
+  List<Map<String, dynamic>> orderCartItems = []; // Add this line
+  bool isLoading = false;
 
   @override
   void initState() {
@@ -38,6 +41,8 @@ class _CheckoutPageState extends State<CheckoutPage> {
     fetchUserDetails();
     _addressController = TextEditingController(text: widget.currentAddress);
     _cityController = TextEditingController(text: widget.selectedCity);
+    orderCartItems.addAll(widget.cartItems);
+    _loadPhoneNumber();
   }
 
   @override
@@ -46,6 +51,23 @@ class _CheckoutPageState extends State<CheckoutPage> {
     _cityController.dispose();
     super.dispose();
   }
+  Future<void> _loadPhoneNumber() async {
+    String? phoneNumber = await getPhoneNumber();
+    if (phoneNumber != null) {
+      phoneController.text = phoneNumber;
+    }
+  }
+
+  Future<void> savePhoneNumber(String phoneNumber) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setString('userPhoneNumber', phoneNumber);
+  }
+
+  Future<String?> getPhoneNumber() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    return prefs.getString('userPhoneNumber');
+  }
+
 
   Future<void> fetchUserDetails() async {
     final user = FirebaseAuth.instance.currentUser;
@@ -65,7 +87,8 @@ class _CheckoutPageState extends State<CheckoutPage> {
       // Handle user not logged in scenario
       return null;
     }
-    CollectionReference ordersRef = FirebaseFirestore.instance.collection('orders');
+    CollectionReference ordersRef =
+        FirebaseFirestore.instance.collection('orders');
 
     // Generate a new document reference for the order
     DocumentReference newOrderRef = ordersRef.doc();
@@ -77,7 +100,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
       'user_id': user.uid,
       'name': nameController.text.trim(),
       'email': emailController.text.trim(),
-      'mobile': mobileController.text.trim(),
+      'mobile': phoneController.text.trim(),
       'city': _cityController.text.trim(),
       'address': _addressController.text.trim(),
       'created_date': dateFormat.format(now),
@@ -138,7 +161,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
 
     // Normalize the selected city by removing spaces and converting to lowercase
     final normalizedSelectedCity =
-    selectedCity.replaceAll(' ', '').toLowerCase();
+        selectedCity.replaceAll(' ', '').toLowerCase();
 
     // Find a city in the list that matches approximately
     for (String city in cities) {
@@ -179,7 +202,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
                 ),
                 SizedBox(height: 12),
                 TextFormField(
-                  controller: mobileController,
+                  controller: phoneController,
                   validator: validatePhoneNumber,
                   keyboardType: TextInputType.phone,
                   decoration: InputDecoration(
@@ -242,7 +265,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
                   decoration: InputDecoration(
                     label: Text('Address'),
                     hintText:
-                    'Colony XYZ, Block ABC, Street No x, House No XYZ',
+                        'Colony XYZ, Block ABC, Street No x, House No XYZ',
                     floatingLabelBehavior: FloatingLabelBehavior.always,
                     icon: Icon(Icons.pin_drop_outlined),
                   ),
@@ -250,43 +273,42 @@ class _CheckoutPageState extends State<CheckoutPage> {
                 SizedBox(height: 20),
                 Text('Order Summary',
                     style:
-                    TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                ListView.builder(
-                  shrinkWrap: true,
-                  physics: NeverScrollableScrollPhysics(),
-                  itemCount: widget.cartItems.length,
-                  itemBuilder: (context, index) {
-                    final item = widget.cartItems[index];
-                    return ListTile(
-                      title: Text(item['breed']),
-                      subtitle: Text(
-                          'Price: \$${item['price']} \nAge: ${item['age']} years'),
-                    );
-                  },
-                ),
+                        TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+
                 SizedBox(height: 50),
                 Center(
-                  child: MyElevatedButton(
-                    label: 'Place Order',
-                    onPressed: () async {
-                      if (formKey.currentState!.validate()) {
-                        final orderData = await saveOrderDetails();
+                  child: isLoading
+                      ? CircularProgressIndicator.adaptive()
+                      : MyElevatedButton(
+                          label: 'Place Order',
+                          onPressed: () async {
+                            if (formKey.currentState!.validate()) {
+                              setState(() {
+                                isLoading = true;
+                              });
+                              final orderData = await saveOrderDetails();
+                              await savePhoneNumber(phoneController.text);
 
-                        if (orderData != null) {
-                          Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (context) => OrderConfirmationPage(
-                                orderData: orderData,
-                              ),
-                            ),
-                          );
+                              setState(() {
+                                isLoading = false;
+                              });
 
-                          // Clear the cart
-                          context.read<CartProvider>().clearCart();
-                        }
-                      }
-                    },
-                  ),
+                              if (orderData != null) {
+                                Navigator.of(context).pushReplacement(
+                                  MaterialPageRoute(
+                                    builder: (context) => OrderConfirmationPage(
+                                      orderData: orderData,
+                                      orderCartItems: orderCartItems,
+                                    ),
+                                  ),
+                                );
+
+                                // Clear the cart
+                                context.read<CartProvider>().clearCart();
+                              }
+                            }
+                          },
+                        ),
                 ),
               ],
             ),

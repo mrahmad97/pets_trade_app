@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:p_trade/pages/product_detail_page.dart';
 import 'package:provider/provider.dart';
+import 'package:shimmer/shimmer.dart';
 import '../providers/favorite_provider.dart';
 
 class FavoritePage extends StatelessWidget {
@@ -27,9 +28,24 @@ class FavoritePage extends StatelessWidget {
                   subtitle: Text('\$ ${breed['price'].toString()}'),
                   leading: Hero(
                     tag: 'breed-image-${breed['id']}',
-                    child: Image.asset(
+                    child: Image.network(
                       breed['imageURL'][0],
-                      height: 60,
+                      width: 70,
+                      height: 70,
+                      errorBuilder: (context, error, stackTrace) {
+                        return Shimmer.fromColors(
+                          child: Container(
+                            width: 70,
+                            height: 70,
+                            decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius:
+                                BorderRadius.circular(8)),
+                          ),
+                          baseColor: Colors.grey[300]!,
+                          highlightColor: Colors.grey[100]!,
+                        );
+                      },
                     ),
                   ),
                   onTap: () {

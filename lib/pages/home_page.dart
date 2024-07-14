@@ -1,15 +1,15 @@
-import 'package:flutter/material.dart';
-import 'package:p_trade/providers/user_provider.dart';
-import 'package:p_trade/widgets/breed_cards.dart';
-import 'package:p_trade/widgets/shimmer_widget.dart';
-import 'package:provider/provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/material.dart';
 import 'package:p_trade/pages/cart_page.dart';
-import 'package:p_trade/providers/cart_provider.dart';
 import 'package:p_trade/pages/favorite_page.dart';
 import 'package:p_trade/pages/product_detail_page.dart';
 import 'package:p_trade/pages/product_list_page.dart';
 import 'package:p_trade/pages/profile_page.dart';
+import 'package:p_trade/providers/cart_provider.dart';
+import 'package:p_trade/providers/user_provider.dart';
+import 'package:p_trade/widgets/breed_cards.dart';
+import 'package:p_trade/widgets/shimmer_widget.dart';
+import 'package:provider/provider.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -54,7 +54,9 @@ class _HomePageState extends State<HomePage> {
   void _fetchBreeds() async {
     final snapshot = await db.collection('breeds').get();
     setState(() {
-      allBreeds = snapshot.docs.map((doc) => doc.data() as Map<String, dynamic>).toList();
+      allBreeds = snapshot.docs
+          .map((doc) => doc.data() as Map<String, dynamic>)
+          .toList();
     });
   }
 
@@ -62,11 +64,11 @@ class _HomePageState extends State<HomePage> {
     await Future.delayed(Duration(seconds: 2));
     final snapshot = await db.collection('breeds').get();
     setState(() {
-      allBreeds = snapshot.docs.map((doc) => doc.data() as Map<String, dynamic>).toList();
+      allBreeds = snapshot.docs
+          .map((doc) => doc.data() as Map<String, dynamic>)
+          .toList();
       filteredBreeds.clear(); // Clear filtered results if any
-
     });
-
   }
 
   @override
@@ -76,93 +78,114 @@ class _HomePageState extends State<HomePage> {
       backgroundColor: Theme.of(context).colorScheme.surface,
       appBar: AppBar(
         title: isSearching
-            ? TextField(
-          controller: searchController,
-          decoration: InputDecoration(
-            hintText: 'Search breeds...',
-            hintStyle: TextStyle(color: Colors.black),
-          ),
-          style: TextStyle(color: Colors.black),
-          onChanged: (value) {
-            setState(() {
-              if (value.isEmpty) {
-                filteredBreeds.clear();
-              } else {
-                filteredBreeds = filteredSearchResults(value);
-              }
-            });
-          },
-        )
-            : Center(
-          child: Text(
-            'PET TRADE',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-          ),
-        ),
-        leading: Builder(builder: (context) {
-          return IconButton(
-              onPressed: () {
-                Scaffold.of(context).openDrawer();
-              },
-              icon: Icon(Icons.menu));
-        }),
-        actions: [
-          IconButton(
-            onPressed: () {
-              setState(() {
-                isSearching = !isSearching;
-                if (!isSearching) {
-                  searchController.clear();
-                  filteredBreeds.clear();
-                }
-              });
-            },
-            icon: Icon(isSearching ? Icons.close : Icons.search),
-          ),
-          IconButton(
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (context) => CartPage(),
+            ? Container(
+                margin: EdgeInsets.symmetric(horizontal: 2),
+                decoration: BoxDecoration(
+                  color: Colors.grey[200],
+                  borderRadius: BorderRadius.circular(25),
                 ),
-              );
-            },
-            icon: Container(
-              child: Stack(
-                children: [
-                  Container(
-                    height: 50,
-                    width: 50,
-                    child: Icon(Icons.shopping_cart),
+                child: TextField(
+                  controller: searchController,
+                  decoration: InputDecoration(
+                    hintText: 'Search breeds...',
+                    hintStyle: TextStyle(color: Colors.black54),
+                    border: InputBorder.none,
+                    prefixIcon: Icon(Icons.search, color: Colors.black54),
+                    contentPadding: EdgeInsets.symmetric(vertical: 15),
                   ),
-                  Positioned(
-                    top: 0,
-                    right: 0,
-                    child: Container(
-                      width: 20,
-                      height: 20,
-                      decoration: BoxDecoration(
-                        color: Colors.red,
-                        borderRadius: BorderRadius.circular(100),
-                      ),
-                      child: Consumer<CartProvider>(
-                        builder: (context, cartProvider, child) {
-                          return Center(
-                            child: Text(
-                              cartProvider.cartList.length.toString(),
-                              style: TextStyle(color: Colors.white),
-                            ),
-                          );
-                        },
-                      ),
-
-                    ),
-                  )
-                ],
+                  style: TextStyle(color: Colors.black),
+                  onChanged: (value) {
+                    setState(() {
+                      if (value.isEmpty) {
+                        filteredBreeds.clear();
+                      } else {
+                        filteredBreeds = filteredSearchResults(value);
+                      }
+                    });
+                  },
+                ),
+              )
+            : Center(
+                child: Text(
+                  'PET TRADE',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
               ),
-            ),
-          ),
-        ],
+        leading: isSearching
+            ? null
+            : Builder(
+                builder: (context) {
+                  return IconButton(
+                    onPressed: () {
+                      Scaffold.of(context).openDrawer();
+                    },
+                    icon: Icon(Icons.menu),
+                  );
+                },
+              ),
+        actions: isSearching
+            ? [
+                IconButton(
+                  onPressed: () {
+                    setState(() {
+                      isSearching = false;
+                      searchController.clear();
+                      filteredBreeds.clear();
+                    });
+                  },
+                  icon: Icon(Icons.close),
+                ),
+              ]
+            : [
+                IconButton(
+                  onPressed: () {
+                    setState(() {
+                      isSearching = true;
+                    });
+                  },
+                  icon: Icon(Icons.search),
+                ),
+                IconButton(
+                  onPressed: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) => CartPage(),
+                      ),
+                    );
+                  },
+                  icon: Stack(
+                    children: [
+                      Container(
+                        height: 50,
+                        width: 50,
+                        child: Icon(Icons.shopping_cart),
+                      ),
+                      Positioned(
+                        top: 0,
+                        right: 0,
+                        child: Container(
+                          width: 20,
+                          height: 20,
+                          decoration: BoxDecoration(
+                            color: Colors.red,
+                            borderRadius: BorderRadius.circular(100),
+                          ),
+                          child: Consumer<CartProvider>(
+                            builder: (context, cartProvider, child) {
+                              return Center(
+                                child: Text(
+                                  cartProvider.cartList.length.toString(),
+                                  style: TextStyle(color: Colors.white),
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
         backgroundColor: Theme.of(context).colorScheme.surface,
       ),
       drawer: Drawer(
@@ -200,7 +223,8 @@ class _HomePageState extends State<HomePage> {
                           ),
                           decoration: BoxDecoration(color: Colors.transparent),
                           currentAccountPicture: CircleAvatar(
-                            backgroundImage: AssetImage('assets/images/icons/user_avtar.png'),
+                            backgroundImage: AssetImage(
+                                'assets/images/icons/user_avtar.png'),
                           ),
                           currentAccountPictureSize: Size(35, 35),
                         ),
@@ -255,111 +279,122 @@ class _HomePageState extends State<HomePage> {
               children: [
                 isSearching
                     ? Center(
-                  child: Text(
-                    'Search Results',
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                  ),
-                )
+                        child: Text(
+                          'Search Results',
+                          style: TextStyle(
+                              fontSize: 20, fontWeight: FontWeight.bold),
+                        ),
+                      )
                     : Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Container(
-                      padding: EdgeInsets.all(8),
-                      width: double.infinity,
-                      height: 220,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(20),
-                        color: Theme.of(context).colorScheme.primaryContainer,
-                      ),
-                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Expanded(
-                            child: Image.asset(
-                              "assets/images/ad_img/man and dog.png",
-                              width: 200,
+                          Container(
+                            padding: EdgeInsets.all(8),
+                            width: double.infinity,
+                            height: 220,
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(20),
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .primaryContainer,
+                            ),
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: Image.asset(
+                                    "assets/images/ad_img/man and dog.png",
+                                    width: 200,
+                                  ),
+                                ),
+                                Column(
+                                  children: [
+                                    SizedBox(height: 50),
+                                    Text(
+                                      "Pick up The Right Pet!",
+                                      style: TextStyle(
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.black87),
+                                    ),
+                                    SizedBox(height: 10),
+                                    Text(
+                                      'Before buying the\n'
+                                      'pet, make sure that it\n'
+                                      'is the right one for\n'
+                                      'you!',
+                                      style: TextStyle(fontSize: 18),
+                                    )
+                                  ],
+                                ),
+                              ],
                             ),
                           ),
-                          Column(
-                            children: [
-                              SizedBox(height: 50),
-                              Text(
-                                "Pick up The Right Pet!",
-                                style: TextStyle(
-                                    fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87),
-                              ),
-                              SizedBox(height: 10),
-                              Text(
-                                'Before buying the\n'
-                                    'pet, make sure that it\n'
-                                    'is the right one for\n'
-                                    'you!',
-                                style: TextStyle(fontSize: 18),
-                              )
-                            ],
+                          SizedBox(height: 5),
+                          Text(
+                            'Categories',
+                            style: TextStyle(
+                                fontSize: 20, fontWeight: FontWeight.bold),
+                          ),
+                          SizedBox(
+                            height: 100,
+                            child: ListView.builder(
+                              itemCount: category.length,
+                              scrollDirection: Axis.horizontal,
+                              itemBuilder: (context, index) {
+                                return GestureDetector(
+                                  onTap: () {
+                                    Navigator.of(context).push(
+                                      MaterialPageRoute(
+                                        builder: (context) => ProductListPage(
+                                          category: category[index],
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                  child: Container(
+                                    width: 95,
+                                    height: 95,
+                                    margin: EdgeInsets.fromLTRB(0, 0, 12, 0),
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(12),
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .primaryContainer,
+                                    ),
+                                    child: Column(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.center,
+                                      children: [
+                                        Image.asset(
+                                          categoryIcon[index],
+                                          width: 35,
+                                          height: 35,
+                                        ),
+                                        SizedBox(height: 10),
+                                        Text(
+                                          category[index],
+                                          style: TextStyle(
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                          SizedBox(height: 10),
+                          Text(
+                            'Take a Look',
+                            style: TextStyle(
+                                fontSize: 20, fontWeight: FontWeight.bold),
                           ),
                         ],
                       ),
-                    ),
-                    SizedBox(height: 5),
-                    Text(
-                      'Categories',
-                      style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                    ),
-                    SizedBox(
-                      height: 100,
-                      child: ListView.builder(
-                        itemCount: category.length,
-                        scrollDirection: Axis.horizontal,
-                        itemBuilder: (context, index) {
-                          return GestureDetector(
-                            onTap: () {
-                              Navigator.of(context).push(
-                                MaterialPageRoute(
-                                  builder: (context) => ProductListPage(
-                                    category: category[index],
-                                  ),
-                                ),
-                              );
-                            },
-                            child: Container(
-                              width: 95,
-                              height: 95,
-                              margin: EdgeInsets.fromLTRB(0, 0, 12, 0),
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(12),
-                                color: Theme.of(context).colorScheme.primaryContainer,
-                              ),
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                crossAxisAlignment: CrossAxisAlignment.center,
-                                children: [
-                                  Image.asset(
-                                    categoryIcon[index],
-                                    width: 35,
-                                    height: 35,
-                                  ),
-                                  SizedBox(height: 10),
-                                  Text(
-                                    category[index],
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-                    SizedBox(height: 10),
-                    Text(
-                      'Take a Look',
-                      style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                    ),
-                  ],
-                ),
                 StreamBuilder<QuerySnapshot>(
                   stream: db.collection('breeds').snapshots(),
                   builder: (context, snapshot) {
@@ -367,10 +402,13 @@ class _HomePageState extends State<HomePage> {
                       return CardShimmer();
                     } else if (snapshot.hasError) {
                       return CardShimmer();
-                    } else if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                    } else if (!snapshot.hasData ||
+                        snapshot.data!.docs.isEmpty) {
                       return Center(child: Text('No breeds found.'));
                     } else {
-                      var breeds = snapshot.data!.docs.map((doc) => doc.data() as Map<String, dynamic>).toList();
+                      var breeds = snapshot.data!.docs
+                          .map((doc) => doc.data() as Map<String, dynamic>)
+                          .toList();
                       if (isSearching) {
                         breeds = filteredBreeds;
                       }
@@ -382,7 +420,9 @@ class _HomePageState extends State<HomePage> {
                           int firstIndex = index * 2;
                           int secondIndex = firstIndex + 1;
                           var firstBreed = breeds[firstIndex];
-                          var secondBreed = secondIndex < breeds.length ? breeds[secondIndex] : null;
+                          var secondBreed = secondIndex < breeds.length
+                              ? breeds[secondIndex]
+                              : null;
 
                           return Row(
                             children: [
@@ -391,27 +431,35 @@ class _HomePageState extends State<HomePage> {
                                   onTap: () {
                                     Navigator.of(context).push(
                                       MaterialPageRoute(
-                                        builder: (context) => ProductDetailPage(breed: firstBreed),
+                                        builder: (context) => ProductDetailPage(
+                                            breed: firstBreed),
                                       ),
                                     );
                                   },
-                                  child: BreedCard(breed: firstBreed), // Use BreedCard widget here
+                                  child: BreedCard(
+                                      breed:
+                                          firstBreed), // Use BreedCard widget here
                                 ),
                               ),
-                              SizedBox(width: 8), // Add some space between cards
+                              SizedBox(width: 8),
+                              // Add some space between cards
                               secondBreed != null
                                   ? Expanded(
-                                child: GestureDetector(
-                                  onTap: () {
-                                    Navigator.of(context).push(
-                                      MaterialPageRoute(
-                                        builder: (context) => ProductDetailPage(breed: secondBreed),
+                                      child: GestureDetector(
+                                        onTap: () {
+                                          Navigator.of(context).push(
+                                            MaterialPageRoute(
+                                              builder: (context) =>
+                                                  ProductDetailPage(
+                                                      breed: secondBreed),
+                                            ),
+                                          );
+                                        },
+                                        child: BreedCard(
+                                            breed:
+                                                secondBreed), // Use BreedCard widget here
                                       ),
-                                    );
-                                  },
-                                  child: BreedCard(breed: secondBreed), // Use BreedCard widget here
-                                ),
-                              )
+                                    )
                                   : SizedBox(),
                             ],
                           );
@@ -434,7 +482,8 @@ class _HomePageState extends State<HomePage> {
       searchResults = allBreeds.where((breed) {
         String breedName = breed['breed'].toString().toLowerCase();
         String category = breed['category'].toString().toLowerCase();
-        return breedName.contains(query.toLowerCase()) || category.contains(query.toLowerCase());
+        return breedName.contains(query.toLowerCase()) ||
+            category.contains(query.toLowerCase());
       }).toList();
     }
     return searchResults;

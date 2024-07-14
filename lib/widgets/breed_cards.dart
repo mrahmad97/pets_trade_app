@@ -82,7 +82,7 @@ class _BreedCardState extends State<BreedCard> {
                     loadingBuilder: (BuildContext context, Widget child,
                         ImageChunkEvent? loadingProgress) {
                       if (loadingProgress == null) {
-                        WidgetsBinding.instance!.addPostFrameCallback((_) {
+                        WidgetsBinding.instance.addPostFrameCallback((_) {
                           if (mounted) {
                             // Check if the widget is still mounted
                             setState(() {
@@ -97,7 +97,7 @@ class _BreedCardState extends State<BreedCard> {
                     },
                     errorBuilder: (BuildContext context, Object exception,
                         StackTrace? stackTrace) {
-                      WidgetsBinding.instance!.addPostFrameCallback((_) {
+                      WidgetsBinding.instance.addPostFrameCallback((_) {
                         if (mounted) {
                           // Check if the widget is still mounted
                           setState(() {

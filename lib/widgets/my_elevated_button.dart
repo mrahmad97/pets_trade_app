@@ -4,8 +4,8 @@ class MyElevatedButton extends StatelessWidget {
   const MyElevatedButton({
     required this.label,
     required this.onPressed,
-    Key? key,
-  }) : super(key: key);
+    super.key,
+  });
 
   final String label;
   final void Function()? onPressed;
@@ -16,10 +16,10 @@ class MyElevatedButton extends StatelessWidget {
       width: MediaQuery.of(context).size.width*2/3,
       child: ElevatedButton(
         onPressed: onPressed,
-        child: Text(label),
         style: ElevatedButton.styleFrom(
             foregroundColor: Theme.of(context).colorScheme.surface,
             backgroundColor: Theme.of(context).colorScheme.primary),
+        child: Text(label),
       ),
     );
   }

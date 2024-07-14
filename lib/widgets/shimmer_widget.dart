@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:shimmer/shimmer.dart';
 
 class OrderShimmerWidget extends StatelessWidget {
+  const OrderShimmerWidget({super.key});
+
   @override
   Widget build(BuildContext context) {
     return Shimmer.fromColors(
@@ -28,6 +30,8 @@ class OrderShimmerWidget extends StatelessWidget {
 }
 
 class ImageDetailShimmer extends StatelessWidget {
+  const ImageDetailShimmer({super.key});
+
   @override
   Widget build(BuildContext context) {
     return Shimmer.fromColors(
@@ -44,6 +48,8 @@ class ImageDetailShimmer extends StatelessWidget {
 }
 
 class CardShimmer extends StatelessWidget {
+  const CardShimmer({super.key});
+
   @override
   Widget build(BuildContext context) {
     return Shimmer.fromColors(
